@@ -1,7 +1,7 @@
 # 🚀 WhatsApp Bulk Message Scheduler
 
 Welcome to the WhatsApp Bulk Message Scheduler, a sleek and powerful Node.js tool designed to schedule and send bulk WhatsApp messages with media attachments to multiple contacts at your chosen time. Built for ease and reliability, this project lives on GitHub at [ShaktiNTripathi/Bulk_Whatsapp](https://github.com/ShaktiNTripathi/Bulk_Whatsapp), with cutting-edge features in the v2 branch.
-```markdown
+
 
 ## 📑 Table of Contents
 
@@ -42,7 +42,7 @@ Get ready to roll with these essentials:
 ## 📥 Installation
 
 1. **Clone the v2 branch**:
-
+```markdown
    ```bash
    git clone -b v2 https://github.com/ShaktiNTripathi/Bulk_Whatsapp.git
    cd Bulk_Whatsapp
