@@ -1,7 +1,24 @@
 {
   "name": "whatsappbulk",
   "version": "1.0.0",
+  "description": "A Node.js-based script that uses [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js) to send bulk media and messages automatically to a list of phone numbers.",
   "main": "whatsapp_advanced.js",
+  "bin": "whatsapp_advanced.js",
+  "pkg": {
+    "assets": [
+      "media/**/*",
+      ".wwebjs_auth/**/*",
+      "node_modules/puppeteer/.local-chromium/**/*",  
+      "node_modules/whatsapp-web.js/node_modules/puppeteer/.local-chromium/**/*" 
+    ],
+    "scripts": [
+      "whatsapp_advanced.js"
+    ],
+    "targets": [
+      "node18-win-x64" 
+    ],
+    "outputPath": "build"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -127,5 +144,12 @@
     "yauzl": "^2.10.0",
     "zod": "^3.24.3"
   },
-  "description": ""
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShaktiNTripathi/Bulk_Whatsapp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ShaktiNTripathi/Bulk_Whatsapp/issues"
+  },
+  "homepage": "https://github.com/ShaktiNTripathi/Bulk_Whatsapp#readme"
 }
