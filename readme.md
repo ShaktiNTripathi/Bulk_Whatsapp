@@ -105,11 +105,3 @@ whatsapp-bulk-sender/
 This project is licensed under the **MIT License**.  
 Use responsibly and at your own risk.
 
----
-
-Would you also like me to create a **`package.json`** file ready for this project? 🚀  
-It’ll make your setup even cleaner! 🔥  
-(Just say "yes".)"# Bulk_Whatsapp" 
-"# Bulk_Whatsapp" 
-"# Bulk_Whatsapp" 
-"# Bulk_Whatsapp" 
