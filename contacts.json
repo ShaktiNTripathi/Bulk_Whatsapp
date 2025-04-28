@@ -1,0 +1,14 @@
+{
+    "contacts": [
+      {
+        "type": "individual",
+        "phone": "+917310213636",
+        "message": "Hello! Test message."
+      },
+      {
+        "type": "individual",
+        "phone": "+918271955286",
+        "message": "Check this out!"
+      }
+    ]
+  }
