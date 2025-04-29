@@ -1,23 +1,36 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const readline = require('readline');
-const moment = require('moment'); // npm install moment
+const fs = require('fs');
+const moment = require('moment');
+const path = require('path');
+const crypto = require('crypto');
 
-// Define numbers and their bulk counts
-const contacts = [
-    { number: '+917310213636', count: 5 },
-    { number: '+918271955286', count: 3 },
-    { number: '+919876543211', count: 10 }
+// Settings
+let settings = {
+    maxRetries: 3,
+    throttleRate: 30,
+    minDelay: 500,
+    maxDelay: 2000,
+    batchSize: 5,
+    dryRun: false,
+    logFile: './logs/campaign-log.txt',
+    timezone: 'Asia/Kolkata',
+};
+
+// Define contacts with behavior tracking
+let contacts = [
+    { number: '+919532324942', name: 'Rahul', preferences: { language: 'en', media: true }, priority: 1 },
+    { number: '+918271955287', name: 'Priya', preferences: { language: 'hi', media: false }, priority: 2 },
+    { number: '+919876543211', name: 'Amit', preferences: { language: 'en', media: true }, priority: 1 },
 ];
 
-// Media file path
-const mediaPath = './media/whatsapp 1234.apk';
-
-// Initialize readline
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+// Media and message templates
+const mediaPaths = ['./media/sample.jpeg', './media/sample.jpeg'];
+const jokes = [
+    'Why don’t skeletons fight each other? They don’t have the guts.',
+    'What do you call fake spaghetti? An impasta!',
+    'Why couldn’t the bicycle stand up by itself? It was two-tired.'
+];
 
 // Initialize WhatsApp client
 const client = new Client({
@@ -35,36 +48,9 @@ client.on('qr', (qr) => {
 });
 
 // On client ready
-client.on('ready', () => {
+client.on('ready', async () => {
     console.log('✅ WhatsApp client is ready!');
-
-    const now = moment();
-    console.log(`📅 Current Date and Time: ${now.format('YYYY-MM-DD HH:mm')}`);
-
-    rl.question('⏰ Enter the Date and Time to schedule sending (format: YYYY-MM-DD HH:mm): ', async (input) => {
-        const scheduledTime = moment(input, 'YYYY-MM-DD HH:mm', true);
-
-        if (!scheduledTime.isValid()) {
-            console.error('❌ Invalid date-time format. Please follow YYYY-MM-DD HH:mm.');
-            await gracefulShutdown(1);
-        }
-
-        const diffMs = scheduledTime.diff(moment());
-
-        if (diffMs <= 0) {
-            console.error('❌ Scheduled time must be in the future.');
-            await gracefulShutdown(1);
-        }
-
-        console.log(`✅ Messages scheduled for: ${scheduledTime.format('YYYY-MM-DD HH:mm')}`);
-        console.log('🕰 Waiting until scheduled time...');
-
-        setTimeout(() => {
-            sendBulkMessages();
-        }, diffMs);
-
-        rl.close();
-    });
+    sendBulkMessages();
 });
 
 // Handle authentication failure
@@ -79,38 +65,115 @@ client.on('error', async (error) => {
     await gracefulShutdown(1);
 });
 
-// Function to send messages
+// Send bulk messages
 async function sendBulkMessages() {
     try {
         console.log('🚀 Sending bulk messages...');
 
-        const media = MessageMedia.fromFilePath(mediaPath);
-        const message = 'Hello! This is your scheduled bulk message.';
+        // Sort contacts by priority
+        const sortedContacts = contacts.sort((a, b) => a.priority - b.priority);
 
-        for (const contact of contacts) {
-            const chatId = contact.number.replace('+', '') + '@c.us';
-
-            for (let i = 0; i < contact.count; i++) {
-                try {
-                    await client.sendMessage(chatId, media);
-                    await client.sendMessage(chatId, message);
-                    console.log(`✅ (${i + 1}/${contact.count}) Sent to ${contact.number}`);
-                    await delay(1500); // Wait between messages
-                } catch (error) {
-                    console.error(`⚠️ Error sending to ${contact.number} (attempt ${i + 1}):`, error.message);
-                }
-            }
+        for (let i = 0; i < sortedContacts.length; i++) {
+            const contact = sortedContacts[i];
+            await processContact(contact);
+            await randomDelay(settings.minDelay, settings.maxDelay);
         }
 
-        console.log('✅ All scheduled bulk messages sent successfully.');
-    } catch (error) {
-        console.error('❌ Error in sending messages:', error.message);
-    } finally {
+        console.log('✅ Campaign completed.');
         await gracefulShutdown(0);
+    } catch (error) {
+        console.error('❌ Error in campaign:', error.message);
+        await gracefulShutdown(1);
     }
 }
 
-// Graceful shutdown function
+// Process individual contact with advanced features
+async function processContact(contact) {
+    const chatId = contact.number.replace('+', '') + '@c.us';
+    const personalizedMessage = generatePersonalizedMessage(contact);
+
+    if (settings.dryRun) {
+        console.log(`🧪 Dry run: Would send to ${contact.name}`);
+        return;
+    }
+
+    try {
+        // Send dynamic location (latitude and longitude)
+        await sendLocation(chatId);
+
+        // Send a random joke
+        await sendRandomJoke(chatId);
+
+        // Send media files from local folder
+        if (contact.preferences.media) {
+            await sendRandomMedia(chatId);
+        }
+
+        // Send personalized message
+        await client.sendMessage(chatId, personalizedMessage);
+        console.log(`✅ Sent to ${contact.name} (${chatId})`);
+    } catch (error) {
+        console.error(`❌ Error sending message to ${contact.name}:`, error.message);
+    }
+}
+
+// Generate personalized message
+function generatePersonalizedMessage(contact) {
+    return `Hello ${contact.name}, here’s your message for today! Current time: ${moment().format('YYYY-MM-DD HH:mm:ss')}`;
+}
+
+// Send Geo-location (Latitude and Longitude)
+async function sendLocation(chatId) {
+    const latitude = 28.7041;
+    const longitude = 77.1025;
+    const locationMessage = `Here is your current location:\nLatitude: ${latitude}\nLongitude: ${longitude}`;
+    await client.sendMessage(chatId, locationMessage);
+}
+
+// Send random joke
+async function sendRandomJoke(chatId) {
+    const joke = jokes[Math.floor(Math.random() * jokes.length)];
+    await client.sendMessage(chatId, joke);
+}
+
+// Send random media file
+async function sendRandomMedia(chatId) {
+    const mediaFile = mediaPaths[Math.floor(Math.random() * mediaPaths.length)];
+    const media = MessageMedia.fromFilePath(mediaFile);
+    await client.sendMessage(chatId, media);
+}
+
+// Send message with formatting (bold, italic, monospace)
+async function sendFormattedMessage(chatId) {
+    const formattedMessage = '*Bold Message*\n_Italic Message_\n`Monospace Message`';
+    await client.sendMessage(chatId, formattedMessage);
+}
+
+// Retry on failure
+async function retrySendMessage(chatId, message, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            await client.sendMessage(chatId, message);
+            console.log('✅ Message sent successfully');
+            return;
+        } catch (error) {
+            console.error(`❌ Error sending message (Attempt ${i + 1}):`, error.message);
+        }
+    }
+}
+
+// Delay helper
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Random delay
+async function randomDelay(min, max) {
+    const randomMs = Math.floor(Math.random() * (max - min + 1)) + min;
+    await delay(randomMs);
+}
+
+// Graceful shutdown
 async function gracefulShutdown(exitCode) {
     try {
         console.log('🔌 Disconnecting WhatsApp client...');
@@ -122,12 +185,7 @@ async function gracefulShutdown(exitCode) {
     }
 }
 
-// Helper delay function
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Handle process events properly
+// Handle process events
 process.on('SIGINT', async () => await gracefulShutdown(0));
 process.on('SIGTERM', async () => await gracefulShutdown(0));
 process.on('SIGUSR2', async () => await gracefulShutdown(0));
@@ -144,5 +202,4 @@ process.on('unhandledRejection', async (error) => {
 client.initialize().catch(async (error) => {
     console.error('❌ Failed to initialize WhatsApp client:', error.message);
     await gracefulShutdown(1);
-
 });
